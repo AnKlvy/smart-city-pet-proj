@@ -2,6 +2,8 @@ import requests
 import json
 import time
 
+from helpers.config import config
+
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 QUERY = """
         [out:json][timeout:180];
@@ -9,9 +11,14 @@ QUERY = """
         out geom;
         """
 
+
 class ParkingsParser:
     def __init__(self):
         self.all_parkings = []
+        self.sleep = config.SLEEP
+        self.error_sleep = config.ERROR_SLEEP
+        self.timeout = config.TIMEOUT
+        self.retries = config.RETRIES
 
     def parse(self):
         tiles = self.get_tiles()
@@ -31,10 +38,10 @@ class ParkingsParser:
     def get_parkings(self, tiles):
         for bbox in tiles:
             south, west, north, east = bbox
-            query = QUERY.format(south, west, north, east)
-            for attempt in range(5):
+            query = QUERY.format(south=south, west=west, north=north, east=east)
+            for attempt in range(self.retries):
                 try:
-                    resp = requests.post(OVERPASS_URL, data=query, timeout=180, delay = 2)
+                    resp = requests.post(OVERPASS_URL, data=query, timeout=self.timeout)
                     resp.raise_for_status()
 
                     data = resp.json()
@@ -50,12 +57,12 @@ class ParkingsParser:
                         self.all_parkings.append(filtered)
 
                     print(f"Tile {bbox} - {len(data['elements'])} элементов")
-                    time.sleep(2)
+                    time.sleep(self.sleep)
                     break
 
                 except (requests.exceptions.RequestException, json.JSONDecodeError) as e:
-                    print(f"Ошибка: {e}, повтор через 5 секунд")
-                    time.sleep(5)
+                    print(f"Ошибка: {e}, повтор через {self.error_sleep} секунд")
+                    time.sleep(self.error_sleep)
 
         print("Всего парковок:", len(self.all_parkings))
 

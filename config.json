@@ -1,0 +1,10 @@
+{
+  "parser": {
+    "sleep": 2,
+    "error_sleep": 5,
+    "requests": {
+      "timeout": 180
+    },
+    "retries": 5
+  }
+}
