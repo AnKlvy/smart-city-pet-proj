@@ -6,7 +6,7 @@ from helpers.config import config
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 QUERY = """
-        [out:json][timeout:180];
+        [out:json][timeout:{timeout}];
         way["amenity"="parking"]({south},{west},{north},{east});
         out geom;
         """
@@ -38,7 +38,7 @@ class ParkingsParser:
     def get_parkings(self, tiles):
         for bbox in tiles:
             south, west, north, east = bbox
-            query = QUERY.format(south=south, west=west, north=north, east=east)
+            query = QUERY.format(timeout=self.timeout, south=south, west=west, north=north, east=east)
             for attempt in range(self.retries):
                 try:
                     resp = requests.post(OVERPASS_URL, data=query, timeout=self.timeout)
